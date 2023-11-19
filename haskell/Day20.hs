@@ -1,16 +1,18 @@
-import Debug.Trace (trace)
+import Data.Array.Unboxed (UArray, assocs, accumArray)
 
 input = 36000000
 
 main = do
-    print $ countPresents 1
-    print "Day 20"
+    print $ findHouseWithPresents part1Presents
+    print $ findHouseWithPresents part2Presents
 
-countPresents :: Int -> Int
-countPresents n
-    | result <= input = countPresents (n + 1)
-    | otherwise = n
-    where result = sum $ map (*10) $ filter (isDivisableBy n) [n,n-1..1]
+findHouseWithPresents :: UArray Int Int -> Int
+findHouseWithPresents = fst . head . dropWhile ((<= input) . snd) . assocs
 
-isDivisableBy :: Int -> Int -> Bool
-isDivisableBy x y = x `mod` y == 0
+part1Presents :: UArray Int Int
+part1Presents = accumArray (+) 0 (1, limit) [(house, elf * 10) | elf <- [1..limit], house <- [elf,2*elf..limit]]
+    where limit = input `div` 10
+
+part2Presents :: UArray Int Int
+part2Presents = accumArray (+) 0 (1, limit) [(house, elf * 11) | elf <- [1..limit], house <- take 50 [elf,2*elf..limit]]
+    where limit = input `div` 10
