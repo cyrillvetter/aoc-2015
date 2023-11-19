@@ -1,10 +1,7 @@
-import Data.List (minimumBy, maximumBy, subsequences)
-import Data.Ord (comparing)
-
 data Stats = S Int Int Int deriving (Show)
 data Item = I Int Int Int deriving (Show)
 
-playerHP = 100
+playerHp = 100
 
 weapons =
     [ I 8 4 0
@@ -33,29 +30,26 @@ rings =
 main = do
     [hp, dmg, armor] <- map (read . last . words) . lines <$> readFile "inputs/21.txt"
     let bossStats = S hp dmg armor
+        fights = map (`fight` bossStats) generateItemCombinations
 
-    print $ fst $ minimumBy (comparing fst) $ filter snd $ map (`simulateFight` bossStats) generateItemCombinations
-    print $ fst $ maximumBy (comparing fst) $ filter (not . snd) $ map (`simulateFight` bossStats) generateItemCombinations
+    print $ minimum $ map fst $ filter snd fights
+    print $ maximum $ map fst $ filter (not . snd) fights
 
-simulateFight :: Item -> Stats -> (Int, Bool)
-simulateFight (I c d a) s = (c, fight (S playerHP d a) s)
-    where
-        fight :: Stats -> Stats -> Bool
-        fight (S playerHp playerDamage playerArmor) (S bossHp bossDamage bossArmor)
-            | nextBossHp <= 0 = True
-            | nextPlayerHp <= 0 = False
-            | otherwise = fight (S nextPlayerHp playerDamage playerArmor) (S nextBossHp bossDamage bossArmor)
-            where nextBossHp = bossHp - max 1 (playerDamage - bossArmor)
-                  nextPlayerHp = playerHp - max 1 (bossDamage - playerArmor)
+fight :: Item -> Stats -> (Int, Bool)
+fight (I cost playerDamage playerArmor) (S bossHp bossDamage bossArmor) = (cost, playerAttacks <= bossAttacks)
+    where playerAttacks = bossHp `ceilDiv` max 1 (playerDamage - bossArmor)
+          bossAttacks = playerHp `ceilDiv` max 1 (bossDamage - playerArmor)
 
 generateItemCombinations :: [Item]
-generateItemCombinations = [ mergeItems w a r | w <- weapons, a <- armor, r <- combinations 2 rings]
+generateItemCombinations = [ mergeItems [w, a, r1, r2] | w <- weapons, a <- armor, [r1, r2] <- combinations 2 rings]
 
-mergeItems :: Item -> Item -> [Item] -> Item
-mergeItems (I wc wd wa) (I ac ad aa) r = I (wc + ac + rc) (wd + ad + rd) (wa + aa + ra)
-    where (I rc rd ra) = foldl (\(I r1c r1d r1a) (I r2c r2d r2a) -> I (r1c + r2c) (r1d + r2d) (r1a + r2a)) (I 0 0 0) r
+mergeItems :: [Item] -> Item
+mergeItems = foldl1 (\(I c1 d1 a1) (I c2 d2 a2) -> I (c1 + c2) (d1 + d2) (a1 + a2))
 
 combinations :: Int -> [a] -> [[a]]
 combinations 0 _ = [[]]
 combinations _ [] = []
 combinations n (x:xs) = map (x:) (combinations (n - 1) xs) ++ combinations n xs
+
+ceilDiv :: Int -> Int -> Int
+ceilDiv x y = ceiling (fromIntegral x / fromIntegral y)
