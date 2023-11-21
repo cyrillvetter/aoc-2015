@@ -12,7 +12,7 @@ scanReplace needle repl haystack = fill 1 needle repl $ splitOn needle haystack
         fill :: Int -> String -> String -> [String] -> [String]
         fill split needle repl rest
             | split == length rest = []
-            | otherwise = built : fill (split + 1) needle repl rest 
+            | otherwise = built : fill (split + 1) needle repl rest
             where (left, right) = splitAt split rest
                   built = intercalate needle left ++ repl ++ intercalate needle right
 
